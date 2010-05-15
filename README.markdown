@@ -22,7 +22,7 @@ Technical details
 =================
 - Stamps the video/picture location via an internal GPS (if phone has one) or external bluetooth GPS (if phone doesn't have internal GPS).
 
-- Supports S60 2nd, 3rd and 5th (Symbian^1) edition phones. See http://www.symbian.org/devices.
+- Supports S60 2nd, 3rd and 5th (Symbian^1) edition phones. See <http://www.symbian.org/devices>.
 To be coded in native Symbian C++ (on Ubuntu GNU/Linux, according to the article develop symbian c++ on linux)
 The source code would be deployed under the GNU GPL on Github.
 
@@ -38,5 +38,5 @@ How to Compile
 ==============
 General Symbian MMP build. Please refer to Symbian C++ (S60 3rd edition onwards) resources (forum.nokia.com, www.symbian.org) and books.
 
-For freedom, as in the GNU "FREE SOFTWARE" idealogy - please see http://www.gnu.org/philosophy/free-sw.html, the author develops and compiles this project on Ubuntu GNU/Linux - please see instructions here http://www.clearevo.com/blog/programming/2009/06/05/symbian_c%2B%2B_on_linux_using_gnupoc_and_eclipse_cdt.html
+For freedom, as in the GNU "FREE SOFTWARE" idealogy - please see <http://www.gnu.org/philosophy/free-sw.html>, the author develops and compiles this project on Ubuntu GNU/Linux - please see instructions at <http://www.clearevo.com/blog/programming/2009/06/05/symbian_c%2B%2B_on_linux_using_gnupoc_and_eclipse_cdt.html>.
 
