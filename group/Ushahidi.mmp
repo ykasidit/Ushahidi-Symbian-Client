@@ -1,0 +1,76 @@
+/*
+    Copyright (C) 2010 Kasidit Yusuf.
+
+    This file is part of "Ushahidi Symbian Uploader".
+
+    "Ushahidi Symbian Uploader" is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    "Ushahidi Symbian Uploader" is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with "Ushahidi Symbian Uploader".  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
+target            Ushahidi.exe
+targettype        exe
+uid               0x100039CE 0x2001BA2E
+
+targetpath        \system\apps\Ushahidi
+
+sourcepath        ..\src
+source            Ushahidi.cpp
+source            Ushahidiapplication.cpp
+source            Ushahidiappui.cpp
+source            Ushahididocument.cpp
+source            Ushahidiview.cpp
+source            Ushahidicontainer.cpp
+
+sourcepath        ..\data
+
+start resource    Ushahidi.rss
+header
+targetpath        resource\apps
+end
+
+start resource    Ushahidi_reg.rss
+#ifdef winscw
+targetpath 	      \private\10003a3f\apps
+#else
+targetpath 	      \private\10003a3f\import\apps
+#endif
+end
+
+
+userinclude       ..\inc ..\..\AzqGenUtils\inc ..\..\AzqLocmon\inc
+systeminclude     \epoc32\include
+
+library           euser.lib
+library           apparc.lib
+library           cone.lib
+library           eikcore.lib
+library           avkon.lib
+library           commonengine.lib
+library			  lbs.lib
+library			  efsrv.lib
+library			  bafl.lib
+library			  apgrfx.lib
+library			  ws32.lib
+
+
+staticlibrary           AzqGenUtils.lib
+staticlibrary           AzqLocmon.lib
+
+lang              en
+
+vendorid          0
+
+capability        LocalServices Location NetworkServices ReadUserData UserEnvironment WriteUserData
+
+// end of file
