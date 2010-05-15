@@ -1,3 +1,7 @@
+Ushahidi Symbian Uploader
+========================
+This is an Ushahidi Symbian Client software for automatic uploading.
+
 Purpose
 ========
 Report incidents to an Ushahidi website automatically after the user records a video or takes a photo on the phone. This is a software applicaiton for S60 2nd, 3rd and 5th (Symbian^1) edition phones.
@@ -25,4 +29,9 @@ The source code would be deployed under the GNU GPL on Github.
 Status
 ======
 At the moment, this is the initial stage, nothing works yet - no release builds yet. Integrating main engine code at the moment...
+
+License
+=======
+"Ushahidi Symbian Uploader" is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
 
