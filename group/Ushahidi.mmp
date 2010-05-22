@@ -20,7 +20,7 @@
 
 target            Ushahidi.exe
 targettype        exe
-uid               0x100039CE 0x2001BA2E
+uid               0x100039CE 0xA89FA87D
 
 targetpath        \system\apps\Ushahidi
 
@@ -40,11 +40,7 @@ targetpath        resource\apps
 end
 
 start resource    Ushahidi_reg.rss
-#ifdef winscw
 targetpath 	      \private\10003a3f\apps
-#else
-targetpath 	      \private\10003a3f\import\apps
-#endif
 end
 
 
@@ -62,7 +58,10 @@ library			  efsrv.lib
 library			  bafl.lib
 library			  apgrfx.lib
 library			  ws32.lib
-
+library			  sysutil.lib
+library 		  esock.lib
+library			  bluetooth.lib
+library			  btextnotifiers.lib
 
 staticlibrary           AzqGenUtils.lib
 staticlibrary           AzqLocmon.lib

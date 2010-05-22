@@ -23,7 +23,7 @@
 
 #include <aknapp.h>
 
-const TUid KUidUshahidiApp = { 0x2001BA2E };
+const TUid KUidUshahidiApp = { 0xA89FA87D };
 
 class CUshahidiApplication : public CAknApplication
     {

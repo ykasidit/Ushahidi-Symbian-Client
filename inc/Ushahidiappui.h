@@ -24,6 +24,7 @@
 #include <aknviewappui.h>
 #include "AzqLocationReader.h"
 #include "AzqInternalGPSReader.h"
+#include "AzqBtGPSReader.h"
 #include "FolderWatcher.h"
 #include <sysutil.h>
 
@@ -68,11 +69,16 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		void AddNewFiles(const TDesC& folder, const TDesC& match);
 		void UploadAllInList();
 		void LeaveIfPathDiskFullL(RFs &aFs, const TDesC& aLogFile, TInt aBytesToWrite);
+
+		void StartBtGPS();
+		void StopBtGPS();
+
 		//////////////////
 
 		//////////////vars
 		CPeriodic* iPeriodic;
     	CAzqInternalGPSReader* iAzqInternalGPSReader;
+    	CAzqBtGPSReader* iBtGPSReader;
 		CFolderWatcher* iCDataImgFolderWatcher;
 		CFolderWatcher* iEImgFolderWatcher;
 		RArray<TUploadFile> iUploadList;

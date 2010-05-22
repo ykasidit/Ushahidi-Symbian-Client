@@ -44,6 +44,7 @@ CUshahidiAppUi::~CUshahidiAppUi()
 		  delete iCDataImgFolderWatcher;
 		  delete iEImgFolderWatcher;
     	  delete iAzqInternalGPSReader;
+    	  delete iBtGPSReader;
 };
 
 void CUshahidiAppUi::ConstructL()
@@ -69,11 +70,15 @@ void CUshahidiAppUi::ConstructL()
 
     	if(err!=KErrNone)
     		{
-    		_LIT(msg,"Can't find/start internal GPS");
+    		_LIT(msg,"Can't find an internal GPS:\n Please use an External Bluetooth GPS.");
     		CAknWarningNote* informationNote = new (ELeave) CAknWarningNote(ETrue);
     		informationNote->ExecuteLD(msg);
     		delete iAzqInternalGPSReader;
     		iAzqInternalGPSReader = NULL;
+
+    		iBtGPSReader = new CAzqBtGPSReader(*this);
+    		iBtGPSReader->ConstructL();
+    		iBtGPSReader->StartL();
     		}
 
 
@@ -692,5 +697,83 @@ void CUshahidiAppUi::UploadAllInList()
 		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine done"));
 
 	}
+
+void CUshahidiAppUi::StartBtGPS()
+	{
+		if(!iBtGPSReader)
+			{
+						delete iBtGPSReader;//iBtGPSReader would be not null only in case of startl failed
+						iBtGPSReader = NULL;
+
+						iBtGPSReader = new (ELeave) CAzqBtGPSReader(*this);
+						TRAPD(err,
+					   ((CAzqBtGPSReader*)iBtGPSReader)->ConstructL();
+		    			iBtGPSReader->StartL();
+						);
+
+						if(err!=KErrNone)
+						{
+							if(err==KErrNotReady)
+								{
+									_LIT(KStartGPSFailed,"GPS engine active/busy...");
+									this->iGpsStateStr = KStartGPSFailed;
+
+									delete iBtGPSReader;
+									iBtGPSReader = NULL;
+								}
+							else
+								{
+									_LIT(KStartGPSFailed,"Start GPS Failed. Retry press 9");
+									this->iGpsStateStr = KStartGPSFailed;
+									iGPSData.Reset();
+
+									delete iBtGPSReader;
+									iBtGPSReader = NULL;
+								}
+						}
+
+			}
+		else
+			{
+						TRAPD(err,
+			    			iBtGPSReader->StartL();
+							);
+
+						if(err!=KErrNone)
+						{
+							if(err==KErrNotReady)
+								{
+									_LIT(KStartGPSFailed,"GPS engine active/busy...");
+									this->iGpsStateStr = KStartGPSFailed;
+								}
+							else
+								{
+									_LIT(KStartGPSFailed,"Start GPS Failed");
+									this->iGpsStateStr = KStartGPSFailed;
+									iGPSData.Reset();
+
+									delete iBtGPSReader;
+									iBtGPSReader = NULL;
+								}
+						}
+			}
+	}
+
+
+void CUshahidiAppUi::StopBtGPS()
+	{
+		if(iBtGPSReader)
+			{
+				iBtGPSReader->Cancel();
+				_LIT(KGPSCancelled,"GPS Inactive - Retry press 9");
+				TAzqGPSData data;
+				data.Reset();
+				OnGPSStateUpdate(KGPSCancelled, data);//notifies any oneshot requester.... should be before next lines otherwise OnGPSStateUpdate won't report because iBtGPSReader would be null
+
+				delete iBtGPSReader;
+				iBtGPSReader = NULL;
+			}
+	}
+
 
 // End of File

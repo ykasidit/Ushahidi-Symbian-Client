@@ -21,7 +21,7 @@
 #include <Ushahidi.rsg>
 
 UID2 KUidAppRegistrationResourceFile
-UID3 0x2001BA2E
+UID3 0xA89FA87D
 
 RESOURCE APP_REGISTRATION_INFO
     {
