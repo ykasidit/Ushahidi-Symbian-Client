@@ -38,7 +38,7 @@ How to Compile
 ==============
 General Symbian MMP build. Please refer to Symbian C++ (S60 3rd edition onwards) resources (forum.nokia.com, www.symbian.org) and books.
 
-You'd also need two static lib projects - AzqLocmon (http://github.com/ykasidit/AzqLocmon) and AzqGenUtils (http://github.com/ykasidit/AzqGenUtils).
+You'd also need two static lib projects - AzqLocmon (see <http://github.com/ykasidit/AzqLocmon>) and AzqGenUtils (see <http://github.com/ykasidit/AzqGenUtils>).
 
 For freedom, as in the GNU "FREE SOFTWARE" idealogy - please see <http://www.gnu.org/philosophy/free-sw.html>, the author develops and compiles this project on Ubuntu GNU/Linux - please see instructions at <http://www.clearevo.com/blog/programming/2009/06/05/symbian_c%2B%2B_on_linux_using_gnupoc_and_eclipse_cdt.html>.
 
