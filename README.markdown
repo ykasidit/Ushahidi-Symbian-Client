@@ -28,7 +28,8 @@ The source code would be deployed under the GNU GPL on Github.
 
 Status
 ======
-At the moment, this is the initial stage, nothing works yet - no release builds yet. Integrating main engine code at the moment...
+At the moment, this is the initial stage, nothing works yet - no release builds yet. Added bluetooth gps code, would test them soon and things should start to work within a month or two.
+
 
 License
 =======
