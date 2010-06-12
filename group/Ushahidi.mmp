@@ -62,6 +62,10 @@ library			  sysutil.lib
 library 		  esock.lib
 library			  bluetooth.lib
 library			  btextnotifiers.lib
+library			  eikcoctl.lib
+library			  eikctl.lib
+library			  gdi.lib
+
 
 staticlibrary           AzqGenUtils.lib
 staticlibrary           AzqLocmon.lib

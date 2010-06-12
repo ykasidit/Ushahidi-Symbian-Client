@@ -104,7 +104,7 @@ void CUshahidiView::DoActivateL( const TVwsViewId& /*aPrevViewId*/,
                                     TUid /*aCustomMessageId*/,
                                     const TDesC8& /*aCustomMessage*/)
     {
-    iContainer = CUshahidiContainer::NewL( ClientRect() );
+    iContainer = CUshahidiContainer::NewL(*this, ClientRect() );
     }
 
 // -----------------------------------------------------------------------------
@@ -131,8 +131,6 @@ void CUshahidiView::DoDeactivate()
 //
 void CUshahidiView::HandleCommandL( TInt aCommand )
     {
-
-
         AppUi()->HandleCommandL( aCommand );
 
     }
@@ -157,5 +155,19 @@ void CUshahidiView::HandleSizeChange( TInt aType )
             }
         }
     }
+
+void CUshahidiView::UpdateText(TTextEnum index,const TDesC& text)
+{
+	switch(index)
+	{
+	case EStatusStr: iText = text; break;
+	case EGpsStr: iGpsStr = text; break;
+	case ETransferState: iFtpStateStr = text; break;
+	}
+
+	if(iContainer)
+		iContainer->DrawNow();
+}
+
 
 // End of File

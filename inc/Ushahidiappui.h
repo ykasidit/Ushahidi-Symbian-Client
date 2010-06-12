@@ -64,15 +64,19 @@ class CUshahidiAppUi : public CAknViewAppUi,
     private: //engine stuff
     	////////////funcs
     	void CreateInfoCsv(TDes& aFileName);
-		TInt GetNWatingUploadL();
+		TInt GetNWatingUpload();
 		void GenerateLogNameL(const TDesC& aFolderPath,TTime &aTestTime,TDes& aLogFile);
 		void AddNewFiles(const TDesC& folder, const TDesC& match);
+
+    public:
+    	void RefreshUploadList();
 		void UploadAllInList();
 		void LeaveIfPathDiskFullL(RFs &aFs, const TDesC& aLogFile, TInt aBytesToWrite);
 
 		void StartBtGPS();
 		void StopBtGPS();
 
+		void GetWaitingUploadArrayL(CArrayPtr<CGulIcon>& updateIcons, CDesCArrayFlat& updateText);
 		//////////////////
 
 		//////////////vars

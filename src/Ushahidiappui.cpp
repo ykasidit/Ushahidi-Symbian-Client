@@ -26,6 +26,7 @@
 #include "Ushahidi.hrh"
 
 #include "AzenqosEngineUtils.h"
+#include <Ushahidi.rsg>
 
 #include <eikfutil.h>
 
@@ -70,7 +71,7 @@ void CUshahidiAppUi::ConstructL()
 
     	if(err!=KErrNone)
     		{
-    		_LIT(msg,"Can't find an internal GPS:\n Please use an External Bluetooth GPS.");
+    		_LIT(msg,"Can't get an internal GPS:\n Please use an External Bluetooth GPS.");
     		CAknWarningNote* informationNote = new (ELeave) CAknWarningNote(ETrue);
     		informationNote->ExecuteLD(msg);
     		delete iAzqInternalGPSReader;
@@ -94,6 +95,9 @@ void CUshahidiAppUi::ConstructL()
 	iPeriodic = CPeriodic::NewL(EPriorityHigh);
 	iPeriodic->Start(KUploadIntervalSeconds*KMillion,KUploadIntervalSeconds*KMillion,aCallBack);
     ///////////////////
+
+	RefreshUploadList();
+
     }
 
 // -----------------------------------------------------------------------------
@@ -131,7 +135,18 @@ void CUshahidiAppUi::HandleResourceChangeL( TInt aType )
     }
 
 
+void CUshahidiAppUi::OnStateEvent(TInt State, TInt err, const TDesC& desc)//ftp state report
+{
+		TBuf<32> rembuf;
+		int remaining = 0;
 
+		TRAPD(rerr, remaining = GetNWatingUpload(););
+
+}
+
+
+_LIT(KGPSWaitStr,"GPS WAIT - Please go outdoor and wait...");
+_LIT(KGPSReadyStr,"GPS Ready: Take photos to upload");
 
 void CUshahidiAppUi::OnGPSStateUpdate(const TDesC& state, TAzqGPSData& aGPSData)
 	{
@@ -139,39 +154,15 @@ void CUshahidiAppUi::OnGPSStateUpdate(const TDesC& state, TAzqGPSData& aGPSData)
 		iGPSData = aGPSData;
 		iLastGpsDataTime.HomeTime();
 
-		/*
+		if(!iAppView)
+			return;
+
+
 		if(iGPSData.iLat.Length()==0)
-			iZRecView->UpdateGps(KGPSWaitStr);
+			iAppView->UpdateText(CUshahidiView::EGpsStr,KGPSWaitStr);
 
 		else
-			iZRecView->UpdateGps(KGPSReadyStr);
-			*/
-		/*
-		TRAPD(terr,
-
-						TUid titlePaneUid;
-			    		titlePaneUid.iUid = EEikStatusPaneUidTitle;
-
-						CEikStatusPane* statusPane = StatusPane();
-
-			   			CEikStatusPaneBase::TPaneCapabilities subPane =
-							statusPane->PaneCapabilities(titlePaneUid);
-
-			            // if we can access the title pane
-						if (subPane.IsPresent() && subPane.IsAppOwned())
-							{
-
-			    			CAknTitlePane* titlePane = (CAknTitlePane*) statusPane->ControlL(titlePaneUid);
-
-			                // read the title text from the resource file
-
-
-
-			    			titlePane->DrawNow();
-
-							}
-
-						);*/
+			iAppView->UpdateText(CUshahidiView::EGpsStr,KGPSReadyStr);
 	}
 
 
@@ -226,7 +217,7 @@ void CUshahidiAppUi::LeaveIfPathDiskFullL(RFs &aFs, const TDesC& aLogFile, TInt 
 
 void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 {
-					//csv format: time,phoneinfo,cellid,lat,lon
+					//csv format: time,lat,lon,filepath,latlonageseconds
 
 
 						TTime now;
@@ -234,8 +225,6 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 
 						 TBuf<1024> log;
 						 TAzenqosEngineUtils::MakeTimeStrMilli(now,log);
-					     _LIT(Kcomma,",");
-					     _LIT(KSemicolon,";");
 
 					   	TTimeIntervalSeconds seconds(KMaxGPSDataAgeSeconds+1); //invalid by default
 
@@ -260,6 +249,8 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 						 log += KComma;
 						 log += aFileName;
 
+						 log += KComma;
+
 						 {//add how old is the lat lon data
 						 log += KComma;
 						 TBuf<64> secondsstr;
@@ -273,6 +264,7 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 
 						 log += secondsstr;
 						 }
+
 						 ////////////////////////////////
 
 						RFs fs = CCoeEnv::Static()->FsSession();
@@ -324,7 +316,7 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 						TBuf<128> rembuf;
 								int remaining = 0;
 
-								TRAPD(rerr, remaining = GetNWatingUploadL(););
+								remaining = GetNWatingUpload();
 
 								/*if(State>=ESendingTYPE)
 									remaining = (iUploadList.Count()+1);
@@ -419,7 +411,35 @@ void CUshahidiAppUi::AddNewFiles(const TDesC& folder, const TDesC& match)
 															TInt terr = now.SecondsFrom(ft,diff);
 															if(terr == KErrNone && diff < min )
 																{
-																	CreateInfoCsv(fp);
+
+																	//bring to foreground
+																	{
+																	TApaTask task(iEikonEnv->WsSession( ));
+																	task.SetWgId(CEikonEnv::Static()->RootWin().Identifier());
+																	task.BringToForeground();
+																	}
+
+																	//ask about uploading
+																	CAknQueryDialog*dlg = CAknQueryDialog::NewL();
+																	TBuf<64> query;
+
+																	query =_L("Upload this to Ushahidi?");
+																	dlg->SetPromptL(query);
+
+																	TBool ans = dlg->ExecuteLD(R_YES_NO_DIALOG);
+																	//send to background
+																	{
+																	TApaTask task(iEikonEnv->WsSession( ));
+																	task.SetWgId(CEikonEnv::Static()->RootWin().Identifier());
+																	task.SendToBackground();
+																	}
+
+																	if(ans)
+																	{
+																		CreateInfoCsv(fp);
+																		RefreshUploadList();
+																	}
+
 																}
 														}
 			    				            	//delete gz files remaining from any previous uploads
@@ -454,48 +474,20 @@ TInt CUshahidiAppUi::OnUploadTimerCallback(TAny* caller)
 		return 1;
 	}
 
-TInt CUshahidiAppUi::GetNWatingUploadL()
+void CUshahidiAppUi::GetWaitingUploadArrayL(CArrayPtr<CGulIcon>& updateIcons, CDesCArrayFlat& updateText)
 	{
-			TFileName folder;
-			folder = _L("list\\");
-			TAzenqosEngineUtils::CompleteWithPrivatePathL(folder);
-			RFs fs = iCoeEnv->FsSession();
-			User::LeaveIfError(fs.Connect());
-			CleanupClosePushL(fs);
-			TFindFile search(fs);
+		for(int i=0;i<iUploadList.Count();i++)
+		{
+					TBuf<256> buf;
+					buf += _L("\t");
+					buf += iUploadList[i].iNameAs;
+					updateText.AppendL(buf);
+		}
+	}
 
-			CDir* aFileList =NULL;
-			TInt err=0;
-
-			_LIT(KCsvMatch,"*.csv");
-
-			err = search.FindWildByDir(KCsvMatch,folder,aFileList);
-
-			TInt ret = 0;
-
-			while (err==KErrNone)
-			{
-				if(err == KErrNone && aFileList)
-					{
-					 ret += aFileList->Count();
-					}
-
-					if(err!=KErrNone)
-					{
-					break;
-					}
-
-			delete aFileList; // 9
-			aFileList = NULL;
-			err=search.FindWild(aFileList); // more, more! // 10
-			}
-
-			CleanupStack::PopAndDestroy();//fs
-
-			//027252525 smt **41
-
-			return ret;
-
+TInt CUshahidiAppUi::GetNWatingUpload()
+	{
+		return iUploadList.Count();
 	}
 
 void CUshahidiAppUi::HandleWsEventL(const TWsEvent &aEvent, CCoeControl *aDestination)
@@ -518,169 +510,166 @@ void CUshahidiAppUi::HandleWsEventL(const TWsEvent &aEvent, CCoeControl *aDestin
 	}
 
 
+void CUshahidiAppUi::RefreshUploadList()
+	{
+
+	iUploadList.Reset();
+	TFileName folder;
+	folder = _L("list\\");
+	TAzenqosEngineUtils::CompleteWithPrivatePathL(folder);
+	RFs fs = iCoeEnv->FsSession();
+	User::LeaveIfError(fs.Connect());
+	CleanupClosePushL(fs);
+	TFindFile search(fs);
+	CDir* aFileList =NULL;
+	TInt err=0;
+
+	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 4"));
+
+	_LIT(KCsvMatch,"*.csv");
+
+	err = search.FindWildByDir(KCsvMatch,folder,aFileList);
+
+	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 5"));
+
+	while (err==KErrNone)
+	{
+			if(err == KErrNone && aFileList)
+				{
+					aFileList->Sort(ESortByName|EDescending);
+					for(TInt i=0;i<aFileList->Count();i++)
+						{
+						//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 6"));
+
+							TParse fullentry;
+							fullentry.Set((*aFileList)[i].iName,& search.File(),NULL); // 5,6,7
+
+							//TDebugLog::LogToFile(_L("c:\\ir.log"),fullentry.FullName());
+
+							if(!((*aFileList)[i].IsDir()))
+								{
+									//add to list
+								TUploadFile csvupload;
+
+								csvupload.iFile = fullentry.FullName();
+								csvupload.iNameAs = fullentry.NameAndExt();
+
+								//read csvfile to ram
+								TBool csvvalid = ETrue;
+
+								TRAPD(ferr,
+								RFile file;
+								User::LeaveIfError(file.Open(fs,fullentry.FullName(),EFileRead));
+								CleanupClosePushL(file);
+								TInt sz=0;
+								User::LeaveIfError(file.Size(sz));
+								if(sz==0 || sz>512)
+								{
+									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("size 0 so leave"));
+									User::Leave(KErrGeneral);
+								}
+
+								//read whole file into buffer
+								HBufC8* buf = HBufC8::NewLC(sz);
+								TPtr8 ptr(buf->Des());
+								file.Read(ptr);
+
+								//parse buf
+								TPtrC8 cur(0,0);
+								TPtrC8 rem(0,0);
+
+								rem.Set(buf->Des());
+								//format: time,lat,lon,filepath,ageoflat_lon
+
+								////TDebugLog::LogToFile(_L("c:\\ir.log"),rem);
+
+								if(TAzenqosEngineUtils::TokenizeCSV8(*buf,cur,rem))
+									{
+									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok0"));
+
+									//get the pre-last token (before last comma) holding filepath
+									TPtrC8 prelast(0,0);
+									while(TAzenqosEngineUtils::TokenizeCSV8(rem,cur,rem))
+									{
+										prelast.Set(cur);
+									}
+
+										rem.Set(cur);
+
+										if(rem.Length()>4 && rem.Length()<128)
+											{
+
+											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok2"));
+
+											//in list upload csv first, then media file
+
+										iUploadList.Append(csvupload);
+
+										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok3"));
+
+										TUploadFile fileupload;
+
+										fileupload.iFile.Copy(rem);
+
+										////TDebugLog::LogToFile(_L("c:\\ir.log"),);
+
+
+										fileupload.iNameAs = fullentry.NameAndExt();
+										TBuf<4> extnodot;
+										extnodot.Copy(rem.Right(3));
+										fileupload.iNameAs.Replace(fileupload.iNameAs.Length()-3,3,extnodot);
+										fileupload.iCsvRefFile = csvupload.iFile;
+										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList preappend"));
+										iUploadList.Append(fileupload);
+										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList post append"));
+
+											}
+										else
+											{
+											csvvalid = EFalse;
+											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse inner"));
+											}
+
+
+
+									}
+								else
+									{
+									csvvalid = EFalse;
+									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse outer"));
+									}
+
+								CleanupStack::PopAndDestroy(2);//buf,file
+								);
+
+								//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("trap ferr"),ferr);
+
+								//should delete here because csv file is now closed above
+								if(csvvalid == EFalse)
+									EikFileUtils::DeleteFile(fullentry.FullName());
+
+
+								}
+						}
+
+				}
+
+			if(err!=KErrNone)
+			{
+			break;
+			}
+	delete aFileList; // 9
+	aFileList = NULL;
+	err=search.FindWild(aFileList); // more, more! // 10
+	}
+
+	CleanupStack::PopAndDestroy();//fs
+
+	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("check ull count "),iUploadList.Count());
+}
 
 void CUshahidiAppUi::UploadAllInList()
 	{
-	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 0"));
-	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 1"));
-
-		if(iUploadList.Count()>0) //in case iazqftpengine is (is actually busy) going to run but not active after connect complete
-			return;
-
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 2"));
-
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 3"));
-
-		//iUploadCsvArray->Reset();
-		iUploadList.Reset();
-
-		TFileName folder;
-		folder = _L("list\\");
-		TAzenqosEngineUtils::CompleteWithPrivatePathL(folder);
-		RFs fs = iCoeEnv->FsSession();
-		User::LeaveIfError(fs.Connect());
-		CleanupClosePushL(fs);
-		TFindFile search(fs);
-		CDir* aFileList =NULL;
-		TInt err=0;
-
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 4"));
-
-		_LIT(KCsvMatch,"*.csv");
-
-		err = search.FindWildByDir(KCsvMatch,folder,aFileList);
-
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 5"));
-
-		while (err==KErrNone)
-		{
-				if(err == KErrNone && aFileList)
-					{
-						aFileList->Sort(ESortByName|EDescending);
-						for(TInt i=0;i<aFileList->Count();i++)
-							{
-							//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 6"));
-
-								TParse fullentry;
-								fullentry.Set((*aFileList)[i].iName,& search.File(),NULL); // 5,6,7
-
-								//TDebugLog::LogToFile(_L("c:\\ir.log"),fullentry.FullName());
-
-								if(!((*aFileList)[i].IsDir()))
-									{
-										//add to list
-									TUploadFile csvupload;
-
-									csvupload.iFile = fullentry.FullName();
-									csvupload.iNameAs = fullentry.NameAndExt();
-
-									//read csvfile to ram
-									TBool csvvalid = ETrue;
-
-									TRAPD(ferr,
-									RFile file;
-									User::LeaveIfError(file.Open(fs,fullentry.FullName(),EFileRead));
-									CleanupClosePushL(file);
-									TInt sz=0;
-									User::LeaveIfError(file.Size(sz));
-									if(sz==0)
-									{
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("size 0 so leave"));
-										User::Leave(KErrGeneral);
-									}
-									HBufC8* buf = HBufC8::NewLC(sz);
-									TPtr8 ptr(buf->Des());
-									file.Read(ptr);
-
-									//parse buf
-									TPtrC8 cur(0,0);
-									TPtrC8 rem(0,0);
-
-									rem.Set(buf->Des());
-
-									////TDebugLog::LogToFile(_L("c:\\ir.log"),rem);
-
-									if(TAzenqosEngineUtils::TokenizeCSV8(*buf,cur,rem))
-										{
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok0"));
-
-										TPtrC8 prelast(0,0);
-											while(TAzenqosEngineUtils::TokenizeCSV8(rem,cur,rem))
-												prelast.Set(cur);
-
-											rem.Set(cur);
-
-											if(rem.Length()>4 && rem.Length()<128)
-												{
-
-												//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok2"));
-
-												//in list upload csv first, then media file
-
-											iUploadList.Append(csvupload);
-
-											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok3"));
-
-											TUploadFile fileupload;
-
-											fileupload.iFile.Copy(rem);
-
-											////TDebugLog::LogToFile(_L("c:\\ir.log"),);
-
-
-											fileupload.iNameAs = fullentry.NameAndExt();
-											TBuf<4> extnodot;
-											extnodot.Copy(rem.Right(3));
-											fileupload.iNameAs.Replace(fileupload.iNameAs.Length()-3,3,extnodot);
-											fileupload.iCsvRefFile = csvupload.iFile;
-											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList preappend"));
-											iUploadList.Append(fileupload);
-											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList post append"));
-
-												}
-											else
-												{
-												csvvalid = EFalse;
-												//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse inner"));
-												}
-
-
-
-										}
-									else
-										{
-										csvvalid = EFalse;
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse outer"));
-										}
-
-									CleanupStack::PopAndDestroy(2);//buf,file
-									);
-
-									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("trap ferr"),ferr);
-
-									//should delete here because csv file is now closed above
-									if(csvvalid == EFalse)
-										EikFileUtils::DeleteFile(fullentry.FullName());
-
-
-									}
-							}
-
-					}
-
-				if(err!=KErrNone)
-				{
-				break;
-				}
-		delete aFileList; // 9
-		aFileList = NULL;
-		err=search.FindWild(aFileList); // more, more! // 10
-		}
-
-		CleanupStack::PopAndDestroy();//fs
-
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("check ull count "),iUploadList.Count());
-
 		if(iUploadList.Count()==0)
 			return;
 
@@ -691,7 +680,6 @@ void CUshahidiAppUi::UploadAllInList()
 		iUploadingFile.iNameAs.Zero();
 
 		//TODO: start upload engine
-
 		////////////
 
 		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine done"));

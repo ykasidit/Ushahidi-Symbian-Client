@@ -40,6 +40,12 @@ class CUshahidiView: public CAknView
                           const TDesC8& aCustomMessage );
         void DoDeactivate();
 
+        enum TTextEnum{EStatusStr,EGpsStr,ETransferState};
+        void UpdateText(TTextEnum index,const TDesC& text);
+        TBuf<32> iText;
+      	TBuf<128> iGpsStr;
+      	TBuf<128> iFtpStateStr;
+
     private:   // Constructors and destructor
         CUshahidiView();
         void ConstructL();
@@ -47,6 +53,9 @@ class CUshahidiView: public CAknView
     private:
         CUshahidiContainer* iContainer;
         TUid iId;
+
+
+
     };
 
 
