@@ -26,6 +26,7 @@
 #include "Ushahidi.hrh"
 
 #include "AzenqosEngineUtils.h"
+#include "AzqDebugLogger.h"
 #include <Ushahidi.rsg>
 
 #include <eikfutil.h>
@@ -265,6 +266,8 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 						 log += secondsstr;
 						 }
 
+						 TDebugLog::LogToFile(_L("c:\\ir.log"),_L("cre csv content ready"));
+
 						 ////////////////////////////////
 
 						RFs fs = CCoeEnv::Static()->FsSession();
@@ -298,14 +301,22 @@ void CUshahidiAppUi::CreateInfoCsv(TDes& aFileName)
 							HBufC8* output = HBufC8::NewLC(log.Length());
 							(output->Des()).Copy(log);
 
+							 TDebugLog::LogToFile(_L("c:\\ir.log"),_L("LeaveIfPathDiskFullL check"));
 							//////////////////////check space
 							LeaveIfPathDiskFullL(fs,logfn,(*output).Length()+1/*endl*/);
 							/////////////////////
+
+							TDebugLog::LogToFile(_L("c:\\ir.log"),_L("LeaveIfPathDiskFullL pass"));
 
 							file.Write(*output);
 							_LIT8(KEndl8,"\n");
 							file.Write(KEndl8());
 							file.Flush();
+
+							TDebugLog::LogToFile(_L("c:\\ir.log"),_L("wrote csv content:"));
+							TDebugLog::LogToFile(_L("c:\\ir.log"),log);
+
+
 							CleanupStack::PopAndDestroy(output);
 							CleanupStack::PopAndDestroy();//file
 
@@ -436,7 +447,9 @@ void CUshahidiAppUi::AddNewFiles(const TDesC& folder, const TDesC& match)
 
 																	if(ans)
 																	{
+																		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("cre csv"));
 																		CreateInfoCsv(fp);
+																		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("refrsh ul list"));
 																		RefreshUploadList();
 																	}
 
@@ -467,9 +480,9 @@ TInt CUshahidiAppUi::OnUploadTimerCallback(TAny* caller)
 
 		//get a list of all files in c:\\data\\images and e:\\images thare are not already in list and are older than start time
 
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("OnUploadTimerCallback0"));
+		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("OnUploadTimerCallback0"));
 		that->UploadAllInList();
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("OnUploadTimerCallback1"));
+		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("OnUploadTimerCallback1"));
 
 		return 1;
 	}
@@ -524,13 +537,13 @@ void CUshahidiAppUi::RefreshUploadList()
 	CDir* aFileList =NULL;
 	TInt err=0;
 
-	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 4"));
+	TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 4"));
 
 	_LIT(KCsvMatch,"*.csv");
 
 	err = search.FindWildByDir(KCsvMatch,folder,aFileList);
 
-	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 5"));
+	TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 5"));
 
 	while (err==KErrNone)
 	{
@@ -539,12 +552,12 @@ void CUshahidiAppUi::RefreshUploadList()
 					aFileList->Sort(ESortByName|EDescending);
 					for(TInt i=0;i<aFileList->Count();i++)
 						{
-						//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 6"));
+						TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList 6"));
 
 							TParse fullentry;
 							fullentry.Set((*aFileList)[i].iName,& search.File(),NULL); // 5,6,7
 
-							//TDebugLog::LogToFile(_L("c:\\ir.log"),fullentry.FullName());
+							TDebugLog::LogToFile(_L("c:\\ir.log"),fullentry.FullName());
 
 							if(!((*aFileList)[i].IsDir()))
 								{
@@ -565,7 +578,7 @@ void CUshahidiAppUi::RefreshUploadList()
 								User::LeaveIfError(file.Size(sz));
 								if(sz==0 || sz>512)
 								{
-									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("size 0 so leave"));
+									TDebugLog::LogToFile(_L("c:\\ir.log"),_L("size 0 so leave"));
 									User::Leave(KErrGeneral);
 								}
 
@@ -581,11 +594,11 @@ void CUshahidiAppUi::RefreshUploadList()
 								rem.Set(buf->Des());
 								//format: time,lat,lon,filepath,ageoflat_lon
 
-								////TDebugLog::LogToFile(_L("c:\\ir.log"),rem);
+								//TDebugLog::LogToFile(_L("c:\\ir.log"),rem);
 
 								if(TAzenqosEngineUtils::TokenizeCSV8(*buf,cur,rem))
 									{
-									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok0"));
+									TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok0"));
 
 									//get the pre-last token (before last comma) holding filepath
 									TPtrC8 prelast(0,0);
@@ -596,22 +609,24 @@ void CUshahidiAppUi::RefreshUploadList()
 
 										rem.Set(cur);
 
+										TDebugLog::LogToFile(_L("c:\\ir.log"),prelast);
+
 										if(rem.Length()>4 && rem.Length()<128)
 											{
 
-											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok2"));
+											TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok2"));
 
 											//in list upload csv first, then media file
 
 										iUploadList.Append(csvupload);
 
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok3"));
+										TDebugLog::LogToFile(_L("c:\\ir.log"),_L("tok3"));
 
 										TUploadFile fileupload;
 
 										fileupload.iFile.Copy(rem);
 
-										////TDebugLog::LogToFile(_L("c:\\ir.log"),);
+										//TDebugLog::LogToFile(_L("c:\\ir.log"),);
 
 
 										fileupload.iNameAs = fullentry.NameAndExt();
@@ -619,15 +634,15 @@ void CUshahidiAppUi::RefreshUploadList()
 										extnodot.Copy(rem.Right(3));
 										fileupload.iNameAs.Replace(fileupload.iNameAs.Length()-3,3,extnodot);
 										fileupload.iCsvRefFile = csvupload.iFile;
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList preappend"));
+										TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList preappend"));
 										iUploadList.Append(fileupload);
-										//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList post append"));
+										TDebugLog::LogToFile(_L("c:\\ir.log"),_L("UploadAllInList post append"));
 
 											}
 										else
 											{
 											csvvalid = EFalse;
-											//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse inner"));
+											TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse inner"));
 											}
 
 
@@ -636,13 +651,13 @@ void CUshahidiAppUi::RefreshUploadList()
 								else
 									{
 									csvvalid = EFalse;
-									//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse outer"));
+									TDebugLog::LogToFile(_L("c:\\ir.log"),_L("csvvalid = EFalse outer"));
 									}
 
 								CleanupStack::PopAndDestroy(2);//buf,file
 								);
 
-								//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("trap ferr"),ferr);
+								TDebugLog::LogToFile(_L("c:\\ir.log"),_L("trap ferr"),ferr);
 
 								//should delete here because csv file is now closed above
 								if(csvvalid == EFalse)
@@ -665,7 +680,7 @@ void CUshahidiAppUi::RefreshUploadList()
 
 	CleanupStack::PopAndDestroy();//fs
 
-	//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("check ull count "),iUploadList.Count());
+	TDebugLog::LogToFile(_L("c:\\ir.log"),_L("check ull count "),iUploadList.Count());
 }
 
 void CUshahidiAppUi::UploadAllInList()
@@ -673,7 +688,7 @@ void CUshahidiAppUi::UploadAllInList()
 		if(iUploadList.Count()==0)
 			return;
 
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine"));
+		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine"));
 
 		////////////////start ftp engine
 		iUploadingFile.iFile.Zero();
@@ -682,7 +697,7 @@ void CUshahidiAppUi::UploadAllInList()
 		//TODO: start upload engine
 		////////////
 
-		//TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine done"));
+		TDebugLog::LogToFile(_L("c:\\ir.log"),_L("start ftp engine done"));
 
 	}
 

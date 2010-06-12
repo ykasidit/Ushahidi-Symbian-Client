@@ -20,6 +20,6 @@
 
 #define ELanguage               ELangEnglish
 
-rls_string STRING_r_ush_caption_string "Ushahidi"
-rls_string STRING_r_ush_short_caption_string "Ushahidi"
+//rls_string STRING_r_ush_caption_string "Ushahidi"
+//rls_string STRING_r_ush_short_caption_string "Ushahidi"
 
