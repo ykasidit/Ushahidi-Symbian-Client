@@ -4,7 +4,7 @@ This is an Ushahidi Symbian Client software for automatic uploading.
 
 Purpose
 ========
-Report incidents to an Ushahidi website automatically after the user records a video or takes a photo on the phone. This is a software applicaiton for S60 2nd, 3rd and 5th (Symbian^1) edition phones.
+Report incidents to an Ushahidi website automatically after the user records a video or takes a photo on the phone. This is a software applicaiton for S60 3rd and 5th (Symbian^1) edition phones.
 
 This software might also bundle the ushahidi j2me client as a “front-end” for its “view incidents” and other features - in order to avoid redundant work on the same features again, since symbian phones already support j2me very well. (to be discussed later)
 
