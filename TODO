@@ -1,3 +1,5 @@
+- test new pic from camera detection and states well
+
 - delete from list, cancel upload
 - implement http post upload img to ushahidi server api
-- video upload
+- video detection, upload
