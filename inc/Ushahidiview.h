@@ -46,6 +46,8 @@ class CUshahidiView: public CAknView
       	TBuf<128> iGpsStr;
       	TBuf<128> iFtpStateStr;
 
+      	void RefreshULListL();
+
     private:   // Constructors and destructor
         CUshahidiView();
         void ConstructL();

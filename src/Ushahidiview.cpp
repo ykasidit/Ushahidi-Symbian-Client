@@ -104,7 +104,11 @@ void CUshahidiView::DoActivateL( const TVwsViewId& /*aPrevViewId*/,
                                     TUid /*aCustomMessageId*/,
                                     const TDesC8& /*aCustomMessage*/)
     {
-    iContainer = CUshahidiContainer::NewL(*this, ClientRect() );
+		iContainer = CUshahidiContainer::NewL(*this, ClientRect() );
+		if(iContainer)
+		{
+			AppUi()->AddToStackL( *this, iContainer );
+		}
     }
 
 // -----------------------------------------------------------------------------
@@ -169,5 +173,9 @@ void CUshahidiView::UpdateText(TTextEnum index,const TDesC& text)
 		iContainer->DrawNow();
 }
 
-
+void CUshahidiView::RefreshULListL()
+{
+	if(iContainer)
+		iContainer->MakeListBoxL();
+}
 // End of File

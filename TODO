@@ -1,5 +1,7 @@
-- test new pic from camera detection and states well
+- when app starts, ask settings per session - to enter the fields automatically for that session and WARN-tell user that ALL will be uploaded, can also popup to show that it's being put in upload list...
 
-- delete from list, cancel upload
 - implement http post upload img to ushahidi server api
+- delete from list, cancel current upload
+
+
 - video detection, upload
