@@ -91,6 +91,52 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		TAzqGPSData iGPSData;
 		TTime iLastGpsDataTime;
 		///////////////////
+
+		//below api post info from http://wiki.ushahidi.com/doku.php?id=ushahidi_api
+
+		/////incident info
+		enum TIncidentCreateParams
+		{
+		EIncident_task,// - the task to be performed. Its report in this case.
+		EIncident_incident_title,// - Required. The title of the incident/report.
+		Eincident_description,// - Required. The description of the incident/report.
+		Eincident_date,// - Required. The date of the incident/report. It usually in the format mm/dd/yyyy.
+		Eincident_hour,// - Required. The hour of the incident/report. In the 12 hour format.
+		Eincident_minute,// - Required. The minute of the incident/report.
+		Eincident_ampm,// - Required. Is the incident/report am or pm. It of the form, am or pm.
+		Eincident_category,// - Required. The categories the incident/report belongs to. It should be a comma separated value csv
+		EIncident_latitude,// - Required. The latitude of the location of the incident report.
+		EIncident_longitude,// - Required. The longitude of the location of the incident/report.
+		EIncident_location_name,// - Required. The location of the incident/report.
+		EIncident_person_first,// - Optional. The first name of the person submitting the incident/report.
+		EIncident_person_last,// - Optional. The last name of the person submitting the incident/report.
+		EIncident_person_email,// - Optional. The email address of the person submitting the incident/report.
+		EIncident_incident_photo,//[] - Optional. Photos to accompany the incident/report.
+		Eincident_news,// - Optional. A news source regarding the incident/report. A news feed.
+		Eincident_video,// - Optional. A video link regarding the incident/report. Video services like youtube.com, video.google.com, metacafe.com,etc
+		EIncident_resp,// - Optional. The data exchange, either XML or JSON. When not specified, JSON is used.
+		NIncident_params
+		};
+		//////////////
+
+		/////////////photo upload info
+		enum TPhotoUploadParams
+		{
+		EPhoto_id,//- Required. The id of the incident to add the video.
+		EPhoto_photo,// - Required. The path to the photo.
+		EPhoto_task,// - Required. The task to be performed. Its tagphoto in this case.
+		NPhoto_params
+		};
+
+		//video upload info
+		enum TVideoUploadParams
+		{
+		EVideo_id,// - Required. The id of the incident to add the video.
+		EVideo_url,// - Required. The URL of the video.
+		EVideo_task,// - Required. The task to be performed. Its tagvideo in this case.
+		NVideo_params
+		};
+		///////////////////
     };
 
 

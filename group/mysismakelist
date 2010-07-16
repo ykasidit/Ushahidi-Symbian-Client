@@ -10,44 +10,36 @@
 #####sdk selector
 #comment out the s60 ed which you are not using
 
-#s60ed="2nd"
 #s60ed="5th"
 s60ed="3rd"
 
 #################
 
-if [ "$s60ed" = "2nd" ]; then  
-   ##### S60 2nd
-    echo "//////S60 2nd Build start"
-	sdk="s60_26cw" #edit this to your sdk, skip this if you're not building for 2nd ed also
-	PLATFORM="armi"
-	TARGET="urel"
-	###########
-else
-  		if [ "$s60ed" = "3rd" ]; then 
-		sdk="s60_31" #edit this to your sdk
-		else
-		sdk="s60_50"		
-		fi	
-	PLATFORM="gcce"
-	TARGET="urel"
-	###########   
-fi 				
+	if [ "$s60ed" = "3rd" ]; then 
+	sdk="s60_32" #edit this to your sdk
+	else
+	sdk="s60_50"		
+	fi
+		
+PLATFORM="gcce"
+TARGET="urel"
+###########   
+ 				
 
 if [ "$s60ed" = "3rd" ]; then 
 ###s60 3rd ed config
-unsignedsisname="UshahidiUploaderS603rdAnd5th.sis"
-signedsisname="UshahidiUploaderS603rdAnd5th.sisx"
-pkgfile3rdEd="UshahidiUploaderS603rdAnd5th.pkg"
+unsignedsisname="UshahidiUploader_3fp2_5th.sis"
+signedsisname="UshahidiUploader_3fp2_5th.sisx"
+pkgfile3rdEd="UshahidiUploader_3fp2_5th.pkg"
 cerfile="mycert.cer"
 keyfile="mykey.key"
 signingpassword="0000"
 ###
 else
 ###s60 5th ed config
-unsignedsisname="OokjorS605th.sis"
-signedsisname="OokjorS605th.sisx"
-pkgfile3rdEd="OokjorS605th.pkg"
+unsignedsisname="UshahidiUploader_5th.sis"
+signedsisname="UshahidiUploader_5th.sisx"
+pkgfile3rdEd="UshahidiUploader_5th.pkg"
 cerfile="mycert.cer"
 keyfile="mykey.key"
 signingpassword="0000"
