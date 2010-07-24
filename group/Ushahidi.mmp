@@ -66,7 +66,7 @@ library			  btextnotifiers.lib
 library			  eikcoctl.lib
 library			  eikctl.lib
 library			  gdi.lib
-
+library			  inetprotutil.lib http.lib commdb.lib ecom.lib cmmanager.lib
 
 staticlibrary           AzqGenUtils.lib
 staticlibrary           AzqLocmon.lib

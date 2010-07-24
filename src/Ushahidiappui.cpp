@@ -50,12 +50,27 @@ CUshahidiAppUi::~CUshahidiAppUi()
 		  delete iEImgFolderWatcher;
     	  delete iAzqInternalGPSReader;
     	  delete iBtGPSReader;
+    	  delete iClientEngine;
+    	  delete iIncidentCreParams;
+    	  delete iPhotoUploadParams;
+    	  delete iPostDataImage;
 };
 
 void CUshahidiAppUi::ConstructL()
     {
     // Initialise app UI
     BaseConstructL(EAknEnableSkin);
+
+    _LIT(KEmptyStr,"");
+
+    iIncidentCreParams = new (ELeave) CDesC16ArrayFlat(1);
+	 for(TInt i=0;i<NIncident_params;i++) //populate fields
+		 iIncidentCreParams->AppendL(KEmptyStr);
+
+	 iPhotoUploadParams = new (ELeave) CDesC16ArrayFlat(1);
+	 for(TInt i=0;i<NPhoto_params;i++) //populate fields
+		 iPhotoUploadParams->AppendL(KEmptyStr);
+
 
     iAppView = CUshahidiView::NewL();
 
@@ -101,6 +116,9 @@ void CUshahidiAppUi::ConstructL()
     ///////////////////
 
 	iAppView->UpdateText(CUshahidiView::EGpsStr,KGPSWaitStr);
+
+
+	iClientEngine = CClientEngine::NewL(*this);
 
 	RefreshUploadList();
 
@@ -708,21 +726,36 @@ void CUshahidiAppUi::RefreshUploadList()
 
 void CUshahidiAppUi::UploadAllInList()
 	{
-		if(iUploadList.Count()==0)
+		if(iUploadList.Count()==0 )
+		{
+			iAppView->UpdateText(CUshahidiView::EStatusStr,_L("Nothing to upload"));
+			return;
+		}
+
+		if(iClientEngine->IsRunning())
 			return;
 
 		TDebugLog::LogToFile(_L("e:\\ush_upld_log.txt"),_L("start ftp engine"));
 
 		////////////////start ftp engine
-		iUploadingFile.iFile.Zero();
-		iUploadingFile.iNameAs.Zero();
+		///////////////prepare query and send to upload engine
+		iAppView->UpdateText(CUshahidiView::EStatusStr,_L("Preparing upload..."));
 
-		//TODO: start upload engine
-		////////////
+		TRAPD(err,PrepareQueryAndStartHTTPPostUploadL(););
+		if(err!=KErrNone)
+			;
+		////////////////////////
 
 		TDebugLog::LogToFile(_L("e:\\ush_upld_log.txt"),_L("start ftp engine done"));
 
 	}
+
+void CUshahidiAppUi::PrepareQueryAndStartHTTPPostUploadL()
+{
+	  iClientEngine->IssueHTTPPostL(iServerPostURI,
+	            _L8("image/jpeg"),
+	            iUploadList[0].iFile);
+}
 
 void CUshahidiAppUi::StartBtGPS()
 	{
@@ -801,5 +834,16 @@ void CUshahidiAppUi::StopBtGPS()
 			}
 	}
 
+
+void CUshahidiAppUi::ClientEvent(TInt aError, const TDesC& aEventDescription)
+{
+
+}
+
+void CUshahidiAppUi::ClientBodyReceived(const TDesC8& aBodyData)
+{
+
+
+}
 
 // End of File

@@ -1,5 +1,8 @@
 /*
  * Copyright (c) 2009 Nokia Corporation.
+ *
+ *modified http post to upload part by part from a file - no need to read whole file into RAM - by Kasidit Yusuf
+ *
  */
 
 #include <avkon.hrh>
@@ -17,6 +20,9 @@
 #include <commdbconnpref.h>
 
 #include "ClientEngine.h"
+#include <Ushahidi.rsg>
+
+const TInt KPostBufferSize = 10240; //alloc 650+KPostBufferSize because we want to add headers in first send too
 
 // Used user agent for requests
 _LIT8(KUserAgent, "UshahidiSymbianUploader 1.0");
@@ -61,7 +67,6 @@ CClientEngine* CClientEngine::NewLC(MClientObserver& aObserver)
 CClientEngine::CClientEngine(MClientObserver& aObserver)
 : CActive(CActive::EPriorityStandard),
   iObserver(aObserver),
-  iPostData(NULL),
   iConnectionSetupDone(EFalse),
   iPrevProfileId(-1),
   iTransactionOpen(EFalse)
@@ -92,11 +97,15 @@ CClientEngine::~CClientEngine()
     iConnection.Close();
     iSocketServ.Close();
 
-    delete iPostData;
+
 
     delete iUri;
     delete iContentType;
     delete iBody;
+    delete iPostBuffer;
+
+    iPostFile.Close();
+    iFs.Close();
     }
 
 
@@ -106,6 +115,7 @@ CClientEngine::~CClientEngine()
 void CClientEngine::ConstructL()
   {
   CActiveScheduler::Add(this);
+  iPostBuffer = HBufC8::NewL(KPostBufferSize+650); //we want to send headers in first send too so alloc 650 extra
   }
 
 
@@ -264,7 +274,7 @@ void CClientEngine::IssueHTTPGetL(const TDesC8& aUri)
   else if (err != KErrNone)
       {
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(*resTxCancelled);
+      iObserver.ClientEvent(KErrCancel,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       return;
       }
@@ -298,7 +308,7 @@ void CClientEngine::DoHTTPGetL()
   iTransaction.SubmitL();
 
   HBufC* resConnecting = StringLoader::LoadLC(R_HTTP_CONNECTING);
-  iObserver.ClientEvent(*resConnecting);
+  iObserver.ClientEvent(KErrNone,*resConnecting);
   CleanupStack::PopAndDestroy(resConnecting);
   }
 
@@ -308,14 +318,15 @@ void CClientEngine::DoHTTPGetL()
 // ----------------------------------------------------------------------------
 void CClientEngine::IssueHTTPPostL(const TDesC8& aUri,
                  const TDesC8& aContentType,
-                 const TDesC8& aBody)
+                 const TDesC& aFile)
   {
   if (IsActive())
       {
-      return;
+      User::Leave(KErrServerBusy);
       }
 
   iEngineState = EPost;
+  iFirstPostChunkSend = ETrue; //set flag that getnextdatapart just sends our first  iPostBuffer chuck and headers prepared from this func
 
   delete iUri; iUri = NULL;
   delete iContentType; iContentType = NULL;
@@ -323,7 +334,58 @@ void CClientEngine::IssueHTTPPostL(const TDesC8& aUri,
 
   iUri = aUri.AllocL();
   iContentType = aContentType.AllocL();
-  iBody = aBody.AllocL();
+
+  iPostFile.Close();
+  iFs.Close();
+  iPostBuffer->Des().Zero();//reset to zero len buffer desc
+
+  User::LeaveIfError(iFs.Connect());
+  User::LeaveIfError(iPostFile.Open(iFs, aFile, EFileShareAny));
+  User::LeaveIfError(iPostFile.Size(iPostFileSize));
+
+  _LIT8(KDataStart,"--AaB03x");
+  _LIT8(KCrlf,"\r\n");
+  _LIT8(KContent,"Content-Disposition: form-data; name='userfile'; filename='");
+  _LIT8(KFileCompletion,"'");
+
+  _LIT(KContent2,"Content-Type: ");
+  _LIT(KContent3,"Content-Transfer-Encoding: binary");
+  _LIT8(KDataEnd,"--AaB03x--");
+
+  TPtr8 postDataPtr = iPostBuffer->Des();
+  iPostFile.Read(0,postDataPtr,KPostBufferSize); //important - we allocated KPostBufferSize+650 and we need to add more headers in first send so dont full the buffer in first read, leave space for the post headers
+  TInt firstChunkLen = postDataPtr.Length();
+  if(firstChunkLen==0)
+	{
+	  iObserver.ClientEvent(KErrEof,_L("Failed to read from upload file"));
+	  return;
+	}
+
+  TBuf8<256> preFirstChunkHeaders;
+  preFirstChunkHeaders.Append(KCrlf);
+  preFirstChunkHeaders.Append(KDataStart);
+  preFirstChunkHeaders.Append(KCrlf);
+  preFirstChunkHeaders.Append(KContent);
+  preFirstChunkHeaders.Append(aFile);
+  preFirstChunkHeaders.Append(KFileCompletion);
+  preFirstChunkHeaders.Append(KCrlf);
+  preFirstChunkHeaders.Append(KContent2);
+  preFirstChunkHeaders.Append(aContentType);
+  preFirstChunkHeaders.Append(KCrlf);
+  preFirstChunkHeaders.Append(KContent3);
+  preFirstChunkHeaders.Append(KCrlf);
+  preFirstChunkHeaders.Append(KCrlf);
+  postDataPtr.Insert(0,preFirstChunkHeaders);
+
+  //first chunk of the file in binary as we already read in iPostFile.Read above
+
+  postDataPtr.Append(KCrlf);
+  postDataPtr.Append(KDataEnd);
+  postDataPtr.Append(KCrlf);
+
+  iPostFileSize += postDataPtr.Length() - firstChunkLen;//add the extra headerlen to overall len
+
+
 
   // Create HTTP connection
   TRAPD(err, SetupConnectionL());
@@ -334,7 +396,7 @@ void CClientEngine::IssueHTTPPostL(const TDesC8& aUri,
   else if (err != KErrNone)
       {
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(*resTxCancelled);
+      iObserver.ClientEvent(KErrNone,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       return;
       }
@@ -351,9 +413,9 @@ void CClientEngine::DoHTTPPostL()
 
   // Copy data to be posted into member variable; iPostData is used later in
   // methods inherited from MHTTPDataSupplier.
-  delete iPostData;
-  iPostData = 0;
-  iPostData = iBody->AllocL();
+  //delete iPostData;
+  //iPostData = 0;
+  //iPostData = iBody->AllocL();
 
   // Get request method string for HTTP POST
   RStringF method = iSession.StringPool().StringF(HTTP::EPOST,RHTTPSession::GetTable());
@@ -380,7 +442,7 @@ void CClientEngine::DoHTTPPostL()
   iTransaction.SubmitL();
 
   HBufC* resConnecting = StringLoader::LoadLC(R_HTTP_CONNECTING);
-  iObserver.ClientEvent(*resConnecting);
+  iObserver.ClientEvent(KErrNone,*resConnecting);
   CleanupStack::PopAndDestroy(resConnecting);
   }
 
@@ -402,7 +464,7 @@ void CClientEngine::CancelTransaction()
       iTransactionOpen = EFalse;
 
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(*resTxCancelled);
+      iObserver.ClientEvent(KErrCancel,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       }
   }
@@ -431,7 +493,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       statusText.Copy(resp.StatusText().DesC());
 
       HBufC* resHeaderReceived = StringLoader::LoadLC(R_HTTP_HEADER_RECEIVED, statusText, status);
-      iObserver.ClientEvent(*resHeaderReceived);
+      iObserver.ClientEvent(KErrNone,*resHeaderReceived);
       CleanupStack::PopAndDestroy(resHeaderReceived);
       break;
       }
@@ -452,7 +514,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       iObserver.ClientBodyReceived(dataChunk);
 
       HBufC* resBytesReceived = StringLoader::LoadLC(R_HTTP_BYTES_RECEIVED, dataChunk.Length());
-      iObserver.ClientEvent(*resBytesReceived);
+      iObserver.ClientEvent(KErrNone,*resBytesReceived);
       CleanupStack::PopAndDestroy(resBytesReceived);
 
       // NOTE: isLast may not be ETrue even if last data part received.
@@ -462,7 +524,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       if (isLast)
         {
         HBufC* resBodyReceived = StringLoader::LoadLC(R_HTTP_BODY_RECEIVED);
-        iObserver.ClientEvent(*resBodyReceived);
+        iObserver.ClientEvent(KErrNone,*resBodyReceived);
         CleanupStack::PopAndDestroy(resBodyReceived);
         }
 
@@ -476,7 +538,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       // Indicates that header & body of response is completely received.
       // No further action here needed.
       HBufC* resTxComplete = StringLoader::LoadLC(R_HTTP_TX_COMPLETE);
-      iObserver.ClientEvent(*resTxComplete);
+      iObserver.ClientEvent(KErrNone,*resTxComplete);
       CleanupStack::PopAndDestroy(resTxComplete);
       break;
       }
@@ -485,7 +547,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       {
       // Indicates that transaction succeeded.
       HBufC* resTxSuccessful = StringLoader::LoadLC(R_HTTP_TX_SUCCESSFUL);
-      iObserver.ClientEvent(*resTxSuccessful);
+      iObserver.ClientEvent(KErrNone,*resTxSuccessful);
       CleanupStack::PopAndDestroy(resTxSuccessful);
 
       // Transaction can be closed now. It's not needed anymore.
@@ -498,7 +560,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       {
       // Transaction completed with failure.
       HBufC* resTxFailed = StringLoader::LoadLC(R_HTTP_TX_FAILED);
-      iObserver.ClientEvent(*resTxFailed);
+      iObserver.ClientEvent(KErrUnknown,*resTxFailed);
       CleanupStack::PopAndDestroy(resTxFailed);
       aTransaction.Close();
       iTransactionOpen = EFalse;
@@ -514,7 +576,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
         {
           HBufC* resNoInternetConnection = StringLoader::LoadLC(
             R_HTTP_NO_INTERNET_CONNECTION, aEvent.iStatus);
-          iObserver.ClientEvent(*resNoInternetConnection);
+          iObserver.ClientEvent(aEvent.iStatus,*resNoInternetConnection);
           CleanupStack::PopAndDestroy(resNoInternetConnection);
 
           // Close the transaction on errors
@@ -547,7 +609,7 @@ TInt CClientEngine::MHFRunError(TInt aError,
   {
   // Just notify about the error and return KErrNone.
   HBufC* resMHFRunError = StringLoader::LoadLC(R_HTTP_MHFRUN_ERROR, aError);
-  iObserver.ClientEvent(*resMHFRunError);
+  iObserver.ClientEvent(aError, *resMHFRunError);
   CleanupStack::PopAndDestroy(resMHFRunError);
   return KErrNone;
   }
@@ -558,14 +620,30 @@ TInt CClientEngine::MHFRunError(TInt aError,
 // ----------------------------------------------------------------------------
 TBool CClientEngine::GetNextDataPart(TPtrC8& aDataPart)
   {
-  if(iPostData)
-    {
+	if(iFirstPostChunkSend)
+	{
+		aDataPart.Set(*iPostBuffer);
+		iFirstPostChunkSend = EFalse;
+		return EFalse; //not final chunk yet
+	}
+
+	iPostBuffer->Des().Zero();//reset to zero len buffer desc
+	  TPtr8 fptr(0,0,0);
+	  fptr.Set(iPostBuffer->Des());
+	  iPostFile.Read(fptr);
+
+	  aDataPart.Set(fptr);
+
+	if(fptr.Length() < KPostBufferSize) //assuming that a read that doesnt fill the buffer would mean we've reached EOF
+	{
+		return ETrue;
+	}
+
+	return EFalse;
+
     // Provide pointer to next chunk of data (return ETrue, if last chunk)
     // Usually only one chunk is needed, but sending big file could require
     // loading the file in small parts.
-    aDataPart.Set(iPostData->Des());
-    }
-  return ETrue;
   }
 
 
@@ -574,9 +652,12 @@ TBool CClientEngine::GetNextDataPart(TPtrC8& aDataPart)
 // ----------------------------------------------------------------------------
 void CClientEngine::ReleaseData()
   {
+	iPostBuffer->Des().Zero();
+	iPostFile.Close();
+	iFs.Close();
   // It's safe to delete iPostData now.
-  delete iPostData;
-  iPostData = NULL;
+  //delete iPostData;
+  //iPostData = NULL;
   }
 
 // ----------------------------------------------------------------------------
@@ -596,8 +677,8 @@ TInt CClientEngine::Reset()
 // ----------------------------------------------------------------------------
 TInt CClientEngine::OverallDataSize()
   {
-  if(iPostData)
-    return iPostData->Length();
+  if(iPostFileSize)
+    return iPostFileSize;
   else
     return KErrNotFound ;
   }

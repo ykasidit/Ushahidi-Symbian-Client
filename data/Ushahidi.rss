@@ -29,6 +29,59 @@ NAME MULT
 #include "Ushahidi.rls"
 
 
+
+
+rls_string STRING_r_http_options_get "HTTP Get"
+rls_string STRING_r_http_options_post "HTTP Post"
+rls_string STRING_r_http_options_cancel "Cancel"
+rls_string STRING_r_http_options_switch_focus "Switch focus"
+rls_string STRING_r_http_options_help "Help"
+rls_string STRING_r_http_options_about "About"
+rls_string STRING_r_http_options_exit "Exit"
+
+rls_string STRING_r_http_user_name "User name"
+rls_string STRING_r_http_password "Password"
+rls_string STRING_r_http_uri "URI"
+rls_string STRING_r_http_data_to_post "Data to post"
+
+rls_string STRING_r_http_session_error "Cannot create session. Is internet access point configured?"
+rls_string STRING_r_http_exiting_app "Exiting app."
+rls_string STRING_r_http_connecting "Connecting..."
+rls_string STRING_r_http_tx_cancelled "Transaction cancelled."
+rls_string STRING_r_http_header_received "Header received. Status: %N %U"
+rls_string STRING_r_http_bytes_received "%N bytes received..."
+rls_string STRING_r_http_body_received "Body received."
+rls_string STRING_r_http_tx_complete "Transaction complete."
+rls_string STRING_r_http_tx_successful "Transaction successful."
+rls_string STRING_r_http_tx_failed "Transaction failed."
+rls_string STRING_r_http_no_internet_connection "No Internet connection (error %N)."
+rls_string STRING_r_http_unrecognised_event "Unrecognised event: %N."
+rls_string STRING_r_http_mhfrun_error "MHFRunError: %N."
+rls_string STRING_r_http_auth_note "%0U requires %1U authentication."
+rls_string STRING_r_http_auth_required "Authentication required."
+
+
+RESOURCE TBUF r_http_session_error { buf=STRING_r_http_session_error; }
+RESOURCE TBUF r_http_exiting_app { buf=STRING_r_http_exiting_app; }
+RESOURCE TBUF r_http_connecting { buf=STRING_r_http_connecting; }
+RESOURCE TBUF r_http_tx_cancelled { buf=STRING_r_http_tx_cancelled; }
+RESOURCE TBUF r_http_header_received { buf=STRING_r_http_header_received; }
+RESOURCE TBUF r_http_bytes_received { buf=STRING_r_http_bytes_received; }
+RESOURCE TBUF r_http_body_received { buf=STRING_r_http_body_received; }
+RESOURCE TBUF r_http_tx_complete { buf=STRING_r_http_tx_complete; }
+RESOURCE TBUF r_http_tx_successful { buf=STRING_r_http_tx_successful; }
+RESOURCE TBUF r_http_tx_failed { buf=STRING_r_http_tx_failed; }
+RESOURCE TBUF r_http_no_internet_connection { buf=STRING_r_http_no_internet_connection; }
+RESOURCE TBUF r_http_unrecognised_event { buf=STRING_r_http_unrecognised_event; }
+RESOURCE TBUF r_http_mhfrun_error { buf=STRING_r_http_mhfrun_error; }
+RESOURCE TBUF r_http_auth_note { buf=STRING_r_http_auth_note; }
+RESOURCE TBUF r_http_auth_required { buf=STRING_r_http_auth_required; }
+
+// reconnect dialog texts
+rls_string STRING_r_http_reconnect_dialog_confirmation "Connection seems to have been lost. Reconnect?"
+
+
+
 // -----------------------------------------------------------------------------
 //
 //    Define the resource file signature
@@ -135,6 +188,56 @@ layout = EConfirmationLayout;
 }
 };
 }
+
+
+//----------------------------------------------------------------------------
+//
+//    r_dialog_user_password_query
+//    Resource of text and password Query.
+//
+//----------------------------------------------------------------------------
+//
+RESOURCE DIALOG r_dialog_user_password_query
+    {
+    flags = EGeneralQueryFlags;
+    buttons = R_AVKON_SOFTKEYS_OK_CANCEL;
+    items =
+        {
+        DLG_LINE
+            {
+            type = EAknCtMultilineQuery;
+            id = EMultilineFirstLine;
+            control = AVKON_DATA_QUERY
+                {
+                layout = EMultiDataFirstEdwin;
+                label = STRING_r_http_user_name;
+                control = EDWIN
+                    {
+                    flags = EEikEdwinNoHorizScrolling | EEikEdwinResizable;
+                    width = 25;
+                    lines = 1;
+                    maxlength = 128;
+                    };
+                };
+            },
+        DLG_LINE
+            {
+            type = EAknCtMultilineQuery;
+            id = EMultilineSecondLine;
+            control = AVKON_DATA_QUERY
+                {
+                layout = EMultiDataSecondSecEd;
+                label = STRING_r_http_password;
+                control = SECRETED
+                    {
+                    num_letters = 128;
+                    };
+                };
+            }
+        };
+    }
+
+
 
 
 

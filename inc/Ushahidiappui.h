@@ -27,6 +27,8 @@
 #include "AzqBtGPSReader.h"
 #include "FolderWatcher.h"
 #include <sysutil.h>
+#include <badesca.h>
+#include "ClientEngine.h"
 
 class CUshahidiView;
 
@@ -40,7 +42,8 @@ public:
 
 class CUshahidiAppUi : public CAknViewAppUi,
 						public MBtGPSReaderObserver,
-						public MFolderObserver
+						public MFolderObserver,
+						public MClientObserver
     {
 
     public: // Constructors and destructor
@@ -57,6 +60,11 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		static TInt OnUploadTimerCallback(TAny* caller);
 		void OnStateEvent(TInt State, TInt err, const TDesC& desc);
 		void OnFolderChange(const TDesC& aFolder);
+
+		//MClientObserver http engine callbacks
+		void ClientEvent(TInt aError, const TDesC& aEventDescription);
+	    void ClientBodyReceived(const TDesC8& aBodyData);
+	    ////////////
 
     private: //views
         CUshahidiView* iAppView;
@@ -86,10 +94,13 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		CFolderWatcher* iCDataImgFolderWatcher;
 		CFolderWatcher* iEImgFolderWatcher;
 		RArray<TUploadFile> iUploadList;
-		TUploadFile iUploadingFile;
 		TFileName iGpsStateStr;
 		TAzqGPSData iGPSData;
 		TTime iLastGpsDataTime;
+
+		void PrepareQueryAndStartHTTPPostUploadL();
+		HBufC8* iPostDataImage;
+		CClientEngine* iClientEngine;//http post upload engine
 		///////////////////
 
 		//below api post info from http://wiki.ushahidi.com/doku.php?id=ushahidi_api
@@ -118,6 +129,8 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		NIncident_params
 		};
 		//////////////
+		CDesC16ArrayFlat* iIncidentCreParams;
+
 
 		/////////////photo upload info
 		enum TPhotoUploadParams
@@ -127,6 +140,7 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		EPhoto_task,// - Required. The task to be performed. Its tagphoto in this case.
 		NPhoto_params
 		};
+		CDesC16ArrayFlat* iPhotoUploadParams;
 
 		//video upload info
 		enum TVideoUploadParams
@@ -137,6 +151,8 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		NVideo_params
 		};
 		///////////////////
+
+		TBuf8<256> iServerPostURI;
     };
 
 

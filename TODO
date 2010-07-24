@@ -1,7 +1,12 @@
 - when app starts, ask settings per session - to enter the fields automatically for that session and WARN-tell user that ALL will be uploaded, can also popup to show that it's being put in upload list...
+	- make form or series of dialogs to set required initial incident info in iIncidentCreParams
+	- create the incident, get the ID
+	- tell user to start taking pics/videos
+		- upload http post for that ID according to http://wiki.ushahidi.com/doku.php?id=ushahidi_api
 
 - implement http post upload img to ushahidi server api
 - delete from list, cancel current upload
 
 
 - video detection, upload
+

@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2009 Nokia Corporation.
+ *
+ * modified http post to upload part by part from a file - no need to read whole file into RAM - by Kasidit Yusuf
  */
 
 #ifndef __CLIENTENGINE_H__
@@ -39,7 +41,7 @@ class MClientObserver
     *     -
     *
     */
-    virtual void ClientEvent(const TDesC& aEventDescription) = 0;
+    virtual void ClientEvent(TInt aError, const TDesC& aEventDescription) = 0;
 
     /*
     * ClientBodyReceived()
@@ -147,7 +149,7 @@ public:
   */
   void IssueHTTPPostL(const TDesC8& aUri,
             const TDesC8& aContentType,
-            const TDesC8& aBody);
+            const TDesC& aFile);
 
   /*
   * CancelTransaction()
@@ -389,7 +391,14 @@ private:
     RHTTPTransaction            iTransaction;
 
     MClientObserver&            iObserver;  // Used for passing body data and events to UI
-    HBufC8*                     iPostData;  // Data for HTTP POST
+    //HBufC8*                     iPostData;  // Data for HTTP POST
+
+    HBufC8*						iPostBuffer;
+    RFs 						iFs;
+    RFile 						iPostFile;
+    TInt 						iPostFileSize;
+    TBool 						iFirstPostChunkSend;
+
     TBool                       iRunning;   // ETrue, if transaction running
     TBool                       iConnectionSetupDone;
 
