@@ -1,7 +1,12 @@
-- when app starts, ask settings per session - to enter the fields automatically for that session and WARN-tell user that ALL will be uploaded, can also popup to show that it's being put in upload list...
-	- make form or series of dialogs to set required initial incident info in iIncidentCreParams
-	- create the incident, get the ID
-	- tell user to start taking pics/videos
+- when app starts
+	- show on screen [Automatically Upload Pictures and Videos to an Ushahidi incident] [Server URL used]
+	- if first time ask server URL >> check_server_url_entered(): cakninfonote "Please set the Ushahidi Server URL", then bring to settings' page 
+	- querymenu pops, check_server_url_entered() then asks		 
+		Create New Incident >> take to caknsettings item to fill form, create in webserver, store ID and activate 
+		Use Existing Incident >> ask server URL >> ask ID, activate
+	
+	- activate: tell user to start taking pics/videos - WARN they will be automatically uploaded
+		- when new pic/video comes - pop up and show thumbnail, caknconfirmdialog that the img/video is added to upload list of incident ID #
 		- upload http post for that ID according to http://wiki.ushahidi.com/doku.php?id=ushahidi_api
 
 - implement http post upload img to ushahidi server api
