@@ -62,7 +62,7 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		void OnFolderChange(const TDesC& aFolder);
 
 		//MClientObserver http engine callbacks
-		void ClientEvent(TInt aError, const TDesC& aEventDescription);
+		void ClientEvent(TInt aMHFStatus, TInt aError, const TDesC& aEventDescription);
 	    void ClientBodyReceived(const TDesC8& aBodyData);
 	    ////////////
 

@@ -274,7 +274,7 @@ void CClientEngine::IssueHTTPGetL(const TDesC8& aUri)
   else if (err != KErrNone)
       {
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(KErrCancel,*resTxCancelled);
+      iObserver.ClientEvent(0,KErrCancel,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       return;
       }
@@ -308,7 +308,7 @@ void CClientEngine::DoHTTPGetL()
   iTransaction.SubmitL();
 
   HBufC* resConnecting = StringLoader::LoadLC(R_HTTP_CONNECTING);
-  iObserver.ClientEvent(KErrNone,*resConnecting);
+  iObserver.ClientEvent(0,KErrNone,*resConnecting);
   CleanupStack::PopAndDestroy(resConnecting);
   }
 
@@ -357,7 +357,7 @@ void CClientEngine::IssueHTTPPostL(const TDesC8& aUri,
   TInt firstChunkLen = postDataPtr.Length();
   if(firstChunkLen==0)
 	{
-	  iObserver.ClientEvent(KErrEof,_L("Failed to read from upload file"));
+	  iObserver.ClientEvent(0,KErrEof,_L("Failed to read from upload file"));
 	  return;
 	}
 
@@ -396,7 +396,7 @@ void CClientEngine::IssueHTTPPostL(const TDesC8& aUri,
   else if (err != KErrNone)
       {
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(KErrNone,*resTxCancelled);
+      iObserver.ClientEvent(0,KErrNone,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       return;
       }
@@ -442,7 +442,7 @@ void CClientEngine::DoHTTPPostL()
   iTransaction.SubmitL();
 
   HBufC* resConnecting = StringLoader::LoadLC(R_HTTP_CONNECTING);
-  iObserver.ClientEvent(KErrNone,*resConnecting);
+  iObserver.ClientEvent(0,KErrNone,*resConnecting);
   CleanupStack::PopAndDestroy(resConnecting);
   }
 
@@ -464,7 +464,7 @@ void CClientEngine::CancelTransaction()
       iTransactionOpen = EFalse;
 
       HBufC* resTxCancelled = StringLoader::LoadLC(R_HTTP_TX_CANCELLED);
-      iObserver.ClientEvent(KErrCancel,*resTxCancelled);
+      iObserver.ClientEvent(0,KErrCancel,*resTxCancelled);
       CleanupStack::PopAndDestroy(resTxCancelled);
       }
   }
@@ -493,7 +493,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       statusText.Copy(resp.StatusText().DesC());
 
       HBufC* resHeaderReceived = StringLoader::LoadLC(R_HTTP_HEADER_RECEIVED, statusText, status);
-      iObserver.ClientEvent(KErrNone,*resHeaderReceived);
+      iObserver.ClientEvent(aEvent.iStatus, KErrNone,*resHeaderReceived);
       CleanupStack::PopAndDestroy(resHeaderReceived);
       break;
       }
@@ -514,7 +514,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       iObserver.ClientBodyReceived(dataChunk);
 
       HBufC* resBytesReceived = StringLoader::LoadLC(R_HTTP_BYTES_RECEIVED, dataChunk.Length());
-      iObserver.ClientEvent(KErrNone,*resBytesReceived);
+      iObserver.ClientEvent(aEvent.iStatus,KErrNone,*resBytesReceived);
       CleanupStack::PopAndDestroy(resBytesReceived);
 
       // NOTE: isLast may not be ETrue even if last data part received.
@@ -524,7 +524,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       if (isLast)
         {
         HBufC* resBodyReceived = StringLoader::LoadLC(R_HTTP_BODY_RECEIVED);
-        iObserver.ClientEvent(KErrNone,*resBodyReceived);
+        iObserver.ClientEvent(aEvent.iStatus,KErrNone,*resBodyReceived);
         CleanupStack::PopAndDestroy(resBodyReceived);
         }
 
@@ -538,7 +538,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       // Indicates that header & body of response is completely received.
       // No further action here needed.
       HBufC* resTxComplete = StringLoader::LoadLC(R_HTTP_TX_COMPLETE);
-      iObserver.ClientEvent(KErrNone,*resTxComplete);
+      iObserver.ClientEvent(aEvent.iStatus,KErrNone,*resTxComplete);
       CleanupStack::PopAndDestroy(resTxComplete);
       break;
       }
@@ -547,7 +547,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       {
       // Indicates that transaction succeeded.
       HBufC* resTxSuccessful = StringLoader::LoadLC(R_HTTP_TX_SUCCESSFUL);
-      iObserver.ClientEvent(KErrNone,*resTxSuccessful);
+      iObserver.ClientEvent(aEvent.iStatus,KErrNone,*resTxSuccessful);
       CleanupStack::PopAndDestroy(resTxSuccessful);
 
       // Transaction can be closed now. It's not needed anymore.
@@ -560,7 +560,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
       {
       // Transaction completed with failure.
       HBufC* resTxFailed = StringLoader::LoadLC(R_HTTP_TX_FAILED);
-      iObserver.ClientEvent(KErrUnknown,*resTxFailed);
+      iObserver.ClientEvent(aEvent.iStatus,KErrUnknown,*resTxFailed);
       CleanupStack::PopAndDestroy(resTxFailed);
       aTransaction.Close();
       iTransactionOpen = EFalse;
@@ -576,7 +576,7 @@ void CClientEngine::MHFRunL(RHTTPTransaction aTransaction,
         {
           HBufC* resNoInternetConnection = StringLoader::LoadLC(
             R_HTTP_NO_INTERNET_CONNECTION, aEvent.iStatus);
-          iObserver.ClientEvent(aEvent.iStatus,*resNoInternetConnection);
+          iObserver.ClientEvent(aEvent.iStatus,aEvent.iStatus,*resNoInternetConnection);
           CleanupStack::PopAndDestroy(resNoInternetConnection);
 
           // Close the transaction on errors
@@ -609,7 +609,7 @@ TInt CClientEngine::MHFRunError(TInt aError,
   {
   // Just notify about the error and return KErrNone.
   HBufC* resMHFRunError = StringLoader::LoadLC(R_HTTP_MHFRUN_ERROR, aError);
-  iObserver.ClientEvent(aError, *resMHFRunError);
+  iObserver.ClientEvent(0,aError, *resMHFRunError);
   CleanupStack::PopAndDestroy(resMHFRunError);
   return KErrNone;
   }

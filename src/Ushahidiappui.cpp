@@ -835,7 +835,7 @@ void CUshahidiAppUi::StopBtGPS()
 	}
 
 
-void CUshahidiAppUi::ClientEvent(TInt aError, const TDesC& aEventDescription)
+void CUshahidiAppUi::ClientEvent(TInt aMHFStatus, TInt aError, const TDesC& aEventDescription)
 {
 
 }

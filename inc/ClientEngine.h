@@ -41,7 +41,7 @@ class MClientObserver
     *     -
     *
     */
-    virtual void ClientEvent(TInt aError, const TDesC& aEventDescription) = 0;
+    virtual void ClientEvent(TInt aMHFStatus, TInt aError, const TDesC& aEventDescription) = 0;
 
     /*
     * ClientBodyReceived()
