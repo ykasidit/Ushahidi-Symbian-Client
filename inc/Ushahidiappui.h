@@ -87,6 +87,21 @@ class CUshahidiAppUi : public CAknViewAppUi,
 		void GetWaitingUploadArrayL(CArrayPtr<CGulIcon>& updateIcons, CDesCArrayFlat& updateText);
 		//////////////////
 
+		//app state
+		enum TUshULAppState //let the view and contianer draw accordingly - app state excluding uploader engine state which would be taken from clientevent() callbacks
+		{
+			EIdle,
+			EConfSettings,
+			EAskingIncidentNewOrAppendToID,
+			EGetNewIncidentInfo,
+			ECreatingIncident,
+			EWatchingForNewPicsVids, //from this onwards we're in the active_state
+			ENotifyingNewPicAdded,
+			ENotifyingNewVidAdded
+		};
+		TUshULAppState iAppState;
+		/////////
+
 		//////////////vars
 		CPeriodic* iPeriodic;
     	CAzqInternalGPSReader* iAzqInternalGPSReader;
