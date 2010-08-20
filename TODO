@@ -3,7 +3,7 @@
 	- if first time ask server URL >> check_server_url_entered(): cakninfonote "Please set the Ushahidi Server URL", then bring to settings' page 
 	- querymenu pops, check_server_url_entered() then asks		 
 		Create New Incident >> take to caknsettings item to fill form, create in webserver, store ID and activate 
-		Use Existing Incident >> ask server URL >> ask ID, activate
+		Use Existing Incident >> ask ID, activate
 	
 	- activate: tell user to start taking pics/videos - WARN they will be automatically uploaded
 		- when new pic/video comes - pop up and show thumbnail, caknconfirmdialog that the img/video is added to upload list of incident ID #
@@ -11,7 +11,6 @@
 
 - implement http post upload img to ushahidi server api
 - delete from list, cancel current upload
-
 
 - video detection, upload
 
